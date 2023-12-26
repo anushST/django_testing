@@ -1,7 +1,8 @@
-from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
-from django.urls import reverse
 from http import HTTPStatus
+
+from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from notes.models import Note
 
@@ -26,36 +27,30 @@ class TestRoutes(TestCase):
             author=cls.author,
         )
 
-    def test_pages_availability_for_anonymous_user(self):
-        urls = (
-            'notes:home',
-            'users:login',
-            'users:logout',
-            'users:signup',
+    def test_pages_availability(self):
+        parameters = (
+            ('notes:home', None, self.client, HTTPStatus.OK),
+            ('users:login', None, self.client, HTTPStatus.OK),
+            ('users:logout', None, self.client, HTTPStatus.OK),
+            ('users:signup', None, self.client, HTTPStatus.OK),
+            ('notes:detail', (self.note.slug,),
+             self.client_author, HTTPStatus.OK),
+            ('notes:detail', (self.note.slug,),
+             self.client_reader, HTTPStatus.NOT_FOUND),
+            ('notes:edit', (self.note.slug,),
+             self.client_author, HTTPStatus.OK),
+            ('notes:edit', (self.note.slug,),
+             self.client_reader, HTTPStatus.NOT_FOUND),
+            ('notes:delete', (self.note.slug,),
+             self.client_author, HTTPStatus.OK),
+            ('notes:delete', (self.note.slug,),
+             self.client_reader, HTTPStatus.NOT_FOUND),
         )
-        for name in urls:
+        for name, args, user, status_code in parameters:
             with self.subTest(name=name):
-                url = reverse(name)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_pages_availability_for_different_users(self):
-        urls = (
-            'notes:detail',
-            'notes:edit',
-            'notes:delete',
-        )
-        users = (
-            (self.client_author, HTTPStatus.OK),
-            (self.client_reader, HTTPStatus.NOT_FOUND),
-        )
-
-        for user, status_code in users:
-            for name in urls:
-                with self.subTest(name=name):
-                    url = reverse(name, args=(self.note.slug,))
-                    response = user.get(url)
-                    self.assertEqual(response.status_code, status_code)
+                url = reverse(name, args=args)
+                response = user.get(url)
+                self.assertEqual(response.status_code, status_code)
 
     def test_redirects(self):
         urls = (
