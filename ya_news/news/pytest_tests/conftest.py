@@ -52,12 +52,17 @@ def list_news():
 @pytest.fixture
 def comments(news, author):
     now = timezone.now()
-    for index in range(2):
-        comment = Comment.objects.create(
+    comments = Comment.objects.bulk_create(
+        Comment(
             news=news, author=author, text=f'Teкст {index}',
         )
+        for index in range(2)
+    )
+    index = 1
+    for comment in comments:
         comment.created = now + timedelta(days=index)
         comment.save()
+        index += 1
 
 
 @pytest.fixture
@@ -93,3 +98,48 @@ def detail_url(news):
 @pytest.fixture
 def new_form_data():
     return {'text': 'Обновлённый комментарий'}
+
+
+@pytest.fixture
+def news_home_url():
+    return reverse('news:home')
+
+
+@pytest.fixture
+def news_detail_url(news):
+    return reverse('news:detail', args=(news.id,))
+
+
+@pytest.fixture
+def users_login_url():
+    return reverse('users:login')
+
+
+@pytest.fixture
+def users_logout_url():
+    return reverse('users:logout')
+
+
+@pytest.fixture
+def users_signup_url():
+    return reverse('users:signup')
+
+
+@pytest.fixture
+def news_edit_url(comment):
+    return reverse('news:edit', args=(comment.id,))
+
+
+@pytest.fixture
+def news_delete_url(comment):
+    return reverse('news:delete', args=(comment.id,))
+
+
+@pytest.fixture
+def comment_text():
+    return 'Текст комментария'
+
+
+@pytest.fixture
+def new_comment_text():
+    return 'Обновлённый комментарий'

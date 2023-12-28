@@ -36,11 +36,12 @@ class LogicTest(TestCase):
 
     def test_user_can_create_note(self):
         url = reverse('notes:add')
+        Note.objects.all().delete()
         note_count_at_start = Note.objects.count()
         response = self.client_author.post(url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), note_count_at_start + 1)
-        new_note = Note.objects.latest('id')
+        new_note = Note.objects.get()
         self.assertEqual(new_note.title, self.form_data['title'])
         self.assertEqual(new_note.text, self.form_data['text'])
         self.assertEqual(new_note.slug, self.form_data['slug'])
@@ -67,11 +68,12 @@ class LogicTest(TestCase):
     def test_empty_slug(self):
         url = reverse('notes:add')
         self.form_data.pop('slug')
+        Note.objects.all().delete()
         note_count_at_start = Note.objects.count()
         response = self.client_author.post(url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), note_count_at_start + 1)
-        new_note = Note.objects.latest('id')
+        new_note = Note.objects.get()
         expected_slug = slugify(self.form_data['title'])
         self.assertEqual(new_note.slug, expected_slug)
 
@@ -100,20 +102,10 @@ class LogicTest(TestCase):
         url = reverse('notes:delete', args=(self.note.slug,))
         response = self.client_author.post(url)
         self.assertRedirects(response, reverse('notes:success'))
-        deleted = False
-        try:
-            Note.objects.get(id=self.note.id)
-        except Note.DoesNotExist:
-            deleted = True
-        self.assertTrue(deleted)
+        self.assertFalse(Note.objects.filter(id=self.note.id).exists())
 
     def test_other_user_cant_delete_note(self):
         url = reverse('notes:delete', args=(self.note.slug,))
         response = self.client_reader.post(url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        deleted = False
-        try:
-            Note.objects.get(id=self.note.id)
-        except Note.DoesNotExist:
-            deleted = True
-        self.assertFalse(deleted)
+        self.assertTrue(Note.objects.filter(id=self.note.id).exists())

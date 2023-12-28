@@ -6,31 +6,31 @@ from pytest_django.asserts import assertRedirects
 
 
 @pytest.mark.parametrize(
-    'name, model, parametrized_client, expected_status',
+    'url, parametrized_client, expected_status',
     (
-        ('news:home', None, pytest.lazy_fixture('client'), HTTPStatus.OK),
-        ('news:detail', pytest.lazy_fixture('news'),
+        (pytest.lazy_fixture('news_home_url'), pytest.lazy_fixture('client'),
+         HTTPStatus.OK),
+        (pytest.lazy_fixture('news_detail_url'),
          pytest.lazy_fixture('client'), HTTPStatus.OK),
-        ('users:login', None, pytest.lazy_fixture('client'), HTTPStatus.OK),
-        ('users:logout', None, pytest.lazy_fixture('client'), HTTPStatus.OK),
-        ('users:signup', None, pytest.lazy_fixture('client'), HTTPStatus.OK),
-        ('news:edit', pytest.lazy_fixture('comment'),
+        (pytest.lazy_fixture('users_login_url'), pytest.lazy_fixture('client'),
+         HTTPStatus.OK),
+        (pytest.lazy_fixture('users_logout_url'),
+         pytest.lazy_fixture('client'), HTTPStatus.OK),
+        (pytest.lazy_fixture('users_signup_url'),
+         pytest.lazy_fixture('client'), HTTPStatus.OK),
+        (pytest.lazy_fixture('news_edit_url'),
          pytest.lazy_fixture('admin_client'), HTTPStatus.NOT_FOUND),
-        ('news:edit', pytest.lazy_fixture('comment'),
+        (pytest.lazy_fixture('news_edit_url'),
          pytest.lazy_fixture('author_client'), HTTPStatus.OK),
-        ('news:delete', pytest.lazy_fixture('comment'),
+        (pytest.lazy_fixture('news_delete_url'),
          pytest.lazy_fixture('admin_client'), HTTPStatus.NOT_FOUND),
-        ('news:delete', pytest.lazy_fixture('comment'),
+        (pytest.lazy_fixture('news_delete_url'),
          pytest.lazy_fixture('author_client'), HTTPStatus.OK),
     )
 )
 @pytest.mark.django_db
 def test_pages_availability(
-        name, model, parametrized_client, expected_status):
-    if model is not None:
-        url = reverse(name, args=(model.id,))
-    else:
-        url = reverse(name)
+        url, parametrized_client, expected_status):
     response = parametrized_client.get(url)
     assert response.status_code == expected_status
 
