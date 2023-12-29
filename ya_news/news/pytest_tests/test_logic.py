@@ -1,3 +1,4 @@
+import copy
 from http import HTTPStatus
 
 import pytest
@@ -18,11 +19,10 @@ def test_anonymouse_user_can_create_comment(client, form_data, news_url):
 def test_user_can_create_comment(
         author_client, news_url, form_data, news, author, comment_text):
     Comment.objects.all().delete()
-    comments_count_at_start = Comment.objects.count()
     response = author_client.post(news_url, data=form_data)
     assertRedirects(response, f'{news_url}#comments')
     comments_count = Comment.objects.count()
-    assert comments_count == comments_count_at_start + 1
+    assert comments_count == 1
     comment = Comment.objects.get()
     assert comment.text == comment_text
     assert comment.news == news
@@ -62,7 +62,7 @@ def test_user_cant_delete_comment_of_another_user(
 def test_author_can_edit_comment(
         author_client, new_form_data, comment_edit_url,
         url_to_comments, comment, new_comment_text):
-    comment_before = comment
+    comment_before = copy.deepcopy(comment)
     response = author_client.post(comment_edit_url, data=new_form_data)
     assertRedirects(response, url_to_comments)
     comment.refresh_from_db()
@@ -75,7 +75,7 @@ def test_author_can_edit_comment(
 
 def test_user_cant_edit_comment_of_another_user(
         admin_client, comment, comment_edit_url, new_form_data):
-    comment_before = comment
+    comment_before = copy.deepcopy(comment)
     response = admin_client.post(comment_edit_url, data=new_form_data)
     assert response.status_code == HTTPStatus.NOT_FOUND
     comment.refresh_from_db()

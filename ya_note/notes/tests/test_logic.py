@@ -1,3 +1,4 @@
+import copy
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
@@ -37,10 +38,9 @@ class LogicTest(TestCase):
     def test_user_can_create_note(self):
         url = reverse('notes:add')
         Note.objects.all().delete()
-        note_count_at_start = Note.objects.count()
         response = self.client_author.post(url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
-        self.assertEqual(Note.objects.count(), note_count_at_start + 1)
+        self.assertEqual(Note.objects.count(), 1)
         new_note = Note.objects.get()
         self.assertEqual(new_note.title, self.form_data['title'])
         self.assertEqual(new_note.text, self.form_data['text'])
@@ -69,17 +69,16 @@ class LogicTest(TestCase):
         url = reverse('notes:add')
         self.form_data.pop('slug')
         Note.objects.all().delete()
-        note_count_at_start = Note.objects.count()
         response = self.client_author.post(url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
-        self.assertEqual(Note.objects.count(), note_count_at_start + 1)
+        self.assertEqual(Note.objects.count(), 1)
         new_note = Note.objects.get()
         expected_slug = slugify(self.form_data['title'])
         self.assertEqual(new_note.slug, expected_slug)
 
     def test_author_can_edit_note(self):
         url = reverse('notes:edit', args=(self.note.slug,))
-        note_at_start = self.note
+        note_at_start = copy.deepcopy(self.note)
         response = self.client_author.post(url, self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
         self.note.refresh_from_db()
